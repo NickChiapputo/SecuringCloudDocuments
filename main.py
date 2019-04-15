@@ -111,55 +111,74 @@ while( 1 ):
 
 		ct = AES256encrypt( cipherKey, nonce, data ) 								# Create cipher text from data
 		ctLen = len( ct ) 															# Get length of cipher text
-		print( f'\nCipher Text:           { b64encode( ct ).decode() }' )			# Print cipher text
+		#print( f'\nCipher Text:           { b64encode( ct ).decode() }' )			# Print cipher text
 
 
 		mac = HMAC_SHA256( macKey, ct )												# Create MAC over cipher
-		macLen = len( mac ) 														# Store known length of MAC for authentication
 
 		finalCT = ct + mac 															# Create final message by appending MAC to end of cipher text
 
-		print( f'\nMAC:                   { b64encode( mac ).decode() }' )			# Print MAC
-		print( f'\nCipher Text and MAC:   { b64encode( finalCT ).decode() }' )		# Print ( ct || MAC )
+		#print( f'\nMAC:                   { b64encode( mac ).decode() }' )			# Print MAC
+		#print( f'\nCipher Text and MAC:   { b64encode( finalCT ).decode() }' )		# Print ( ct || MAC )
 
 
-		# Write data to file
-#		with open( 'thefile_out', 'wb' ) as f:
-#			f.write( finalCT )
+		try:
+			# Write data to file
+			with open( 'thefile', 'wb' ) as f:
+				f.write( finalCT )
 
-		# Store cipher key
-#		with open( 'key.key', 'wb' ) as f:
-#			f.write( b64encode( cipherKey ).decode() )
+			# Store cipher key
+			with open( 'ck', 'wb' ) as f:
+				f.write( cipherKey )
 
-		# Store macKey
-#		with open( 'key.key', 'a' ) as f:
-#			f.write( b64encode( macKey ).decode() )
+			# Store macKey
+			with open( 'mk', 'wb' ) as f:
+				f.write( macKey )
 
-		# Store nonce
-#		with open( 'key.key', 'a' ) as f:
-#			f.write( b64encode( nonce ).decode() )
-
+			# Store nonce
+			with open( 'nonce', 'wb' ) as f:
+				f.write( nonce )
+		except:
+			print( '\n\033[1;31mUnable to write to files. \033[0mData may be corrupted.\n' )
 	elif userInput.lower() == 'decrypt':
-#		with open( 'thefile_out', 'rb' ) as f:
-#			finalCT = f.read()
+		decrypt = 1																	# By default, decryption will proceed
 
-#		with open( 'key.key', 'rb' ) as f:
-#			cipherKey = f.readLine().strip()
-#			macKey = f.readLine().strip()
-#			nonce = f.readLine().strip()
+		try:																		# Attempt to read from files. Catch exception if unable to read
+			# Read cipher text and mac from file
+			with open( 'thefile', 'rb' ) as f:
+				finalCT = f.read()
 
-		verify = HMAC_SHA256_verify( macKey, finalCT[ :ctLen ], finalCT[ ctLen: ] )
+			# Read cipher key
+			with open( 'ck', 'rb' ) as f:
+				cipherKey = f.read()
 
-		print( f'\nVerify = { verify }\n' )
+			# Read MAC key
+			with open( 'mk', 'rb' ) as f:
+				macKey = f.read()
 
-		if verify:
-			mt = AES256decrypt( cipherKey, nonce, ct )
-			print( f'\nDecrypted Text:        {mt.decode()}' )										# Print deciphered text					
-		else:
-			print( '\nInvalid MAC signature\n' )
+			# Read nonce
+			with open( 'nonce', 'rb' ) as f:
+				nonce = f.read()
+		except:
+			print( '\n\033[1;31mUnable to read from files.\033[0m\n' )					# Tell user program was unable to read from files
+			decrypt = 0																# Set decrypt so that decryption does not proceed
 
+		if decrypt:
+			ctLen = len( finalCT ) - len( macKey ) 										# Calculate the length of the cipher text as the total length minus the length of the appended MAC signature
 
+			verify = HMAC_SHA256_verify( macKey, finalCT[ :ctLen ], finalCT[ ctLen: ] )	# Verify the MAC signature using the MAC key, cipher text, and MAC signature
+
+			if verify:
+				mt = AES256decrypt( cipherKey, nonce, finalCT[ :ctLen ] )				# Decrypt the cipher text using AES256 in CTR mode
+
+				# Write the deciphered text to the file
+				with open( 'thefile', 'w' ) as f:
+					f.write( mt.decode() )
+				#print( f'\nDecrypted Text:        {mt.decode()}' )						# Print deciphered text					
+			else:
+				print( '\n\033[1;31mInvalid MAC signature\033[0m\n' )						# Tell the user the MAC signature is bad
 	elif userInput.lower() == 'exit':
 		exit()
 	else:
 		print( '\n\033[93mBad Input\033[0m\n' )
+	print( '' )
