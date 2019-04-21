@@ -1,2 +1,15 @@
-Drive API 	 - https://developers.google.com/drive/api/v3
-Cryptography - https://cryptography.io/en/latest
+Run in interpreter using command 'python3 main.py' or using makefile with command 'make'
+
+Clean directory by removing token.pickle using command 'make clean'
+
+
+This program gives the user to encrypt or decrypt a file with a user given name. 
+
+Encryption - If the user chooses to encrypt, the program then asks for three passwords - one for the cipher key, one for the MAC key, and one for the nonce. These passwords are then fed into three different Password Based Key Derivation Functions (PBDKFs) to generate the key and nonce used to encrypt in AES CTR mode and to generate the key used to generate a MAC using SHA256 HMAC. The MAC is then appended to the cipher text. This final cipher text is then uploaded to the user's Drive under the same file name originally given.
+
+Decryption - If the user chooses to decrypt, the program first attempts to download the file from the user's drive under the given file name. Once the file is downloaded, the user is prompted for three different passwords. These passwords are then fed into three different Password Based Key Deviation Functions (PBKDFs) to generate the key and nonce used to decrypt in AES CTR mode and to generate the key used to verify the SHA256 HMAC appended to the cipher text. After the MAC signatute is verified, the cipher text prior to the MAC is decrypted. The decrypted data is then stored locally in a file under the same file name originally given.
+
+
+References - 
+	Drive API - https://developers.google.com/drive/api/v3
+	Cryptography - https://cryptography.io/en/latest

@@ -25,7 +25,9 @@ ERROR = '\033[1;31m'																	# Set   ANSI color code to error color (red
 RESET = '\033[0m'																		# Reset ANSI color code to default color
 	
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive']									# Set allowable actions for this program using drive api
+SCOPES = ['https://www.googleapis.com/auth/drive']										# Set allowable actions for this program using drive api
+
+SALT = 'saltsaltsaltsalt'																# Constant salt value to be appended to passwords
 
 # # #
 # Parameters:
@@ -141,7 +143,7 @@ def generatePBK( salt, length ):
 # # #
 def encrypt( service ):
 	filename = input( 'File to encrypt: ' ) 											# Get file name from user
-	salt = ( filename + "saltsaltsaltsalt" ).encode()									# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
+	salt = ( filename + SALT ).encode()													# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
 
 
 	if os.path.exists( filename ): 														# Check if file exists. If so, read from file
@@ -251,7 +253,7 @@ def decrypt( service ):
 		return 																			# Return to main method
 
 
-	salt = ( filename + "saltsaltsaltsalt" ).encode()									# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
+	salt = ( filename + SALT ).encode()													# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
 
 	cKey  = generatePBK( salt, 32 ).derive( input( 'Cipher Key Password: ' ).encode() )	# Create cipher key derivation function then derive key using user given password
 	mKey  = generatePBK( salt, 32 ).derive( input( 'MAC Key Password   : ' ).encode() )	# Create MAC key    derivation function then derive key using user given password
@@ -270,7 +272,13 @@ def decrypt( service ):
 
 	# Write the deciphered text to the file
 	with open( 'thefile', 'w' ) as f:
-		f.write( mt.decode() )
+		# If error occurs when writing data to disk, most likely given passwords for keys are wrong
+		try:
+			f.write( mt.decode() ) 														# Write data to file
+		except:
+			print( ERROR + "\nUnable to save decrypted data" + RESET +  	 			# Tell user data was not able to be saved			
+					'. Either issue with data storage, ' + 
+					'or wrong passwords were given.' )
 	
 	#print( f'\nDecrypted Text:\n{ mt.decode() }' )										# Print deciphered text					
 		
