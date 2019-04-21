@@ -24,6 +24,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 ERROR = '\033[1;31m'																	# Set   ANSI color code to error color (reddish)
 RESET = '\033[0m'																		# Reset ANSI color code to default color
 	
+# If modifying these scopes, delete the file token.pickle.
+SCOPES = ['https://www.googleapis.com/auth/drive']									# Set allowable actions for this program using drive api
 
 # # #
 # Parameters:
@@ -221,22 +223,48 @@ def decrypt():
 # to be downloaded and decrypted. Exit will simply terminate the program.
 # # #
 def main():
+	creds = None 																		# Initialy set the credentials to none (non-existent)
+
+	# token.pickle stores the user's access and refresh tokens
+	# Created automatically when the authorization flow is completed
+	# for the first time. 
+	if os.path.exists( 'token.pickle' ):												# Check if token.pickle exists in current directory
+		with open( 'token.pickle', 'rb' ) as token: 									# Open token.pickle file
+			creds = pickle.load( token ) 												# Load credentials from token.pickle
+
+
+	# If there are no (valid) credentials available, let the user log in/give access
+	if not creds or not creds.valid:													# Check if no credentials exist or if they are invalid
+		if creds and creds.expired and creds.refresh_token: 							# Check if credentials are expired or refresh_token is set
+			creds.refresh( Request() )													# Refresh the credentials
+		else:
+			flow = InstalledAppFlow.from_client_secrets_file(							# Get flow from credentials file
+				'credentials.json', SCOPES ) 	
+			creds = flow.run_local_server() 											# Store credentials and let user give access
+
+		with open( 'token.pickle', 'wb' ) as token:										# Open token.pickle for writing
+			pickle.dump( creds, token ) 												# Save information/creds to token.pickle
+
+	service = build( 'drive', 'v3', credentials = creds ) 					# Create the service connected to the user's (given by creds) drive v3 (given by application and version)
+	about = service.about().get( fields = '*' ).execute()
+
+	print( u'Successfully logged in as {0}.\n'.format( about['user']['displayName'] ) )
 
 
 	while( 1 ):
 		# Show menu
 		print( 	'Menu:\n' + 
-				'    Encrypt\n' +
-				'    Decrypt\n' +
-				'    Exit\n   ' )
+				'    1. Encrypt\n' +
+				'    2. Decrypt\n' +
+				'    3. Exit\n   ' )
 
 		userInput = input( '>> ' )														# Prompt for user input
 
-		if userInput.lower() == 'encrypt':
+		if userInput.lower()   == 'encrypt' or userInput == '1':
 			encrypt() 																	# Encrypt the thing
-		elif userInput.lower() == 'decrypt':
+		elif userInput.lower() == 'decrypt' or userInput == '2':
 			decrypt()																	# Decrypt the thing
-		elif userInput.lower() == 'exit':
+		elif userInput.lower() == 'exit' 	or userInput == '3':
 			exit()																		# Leave this thing
 		else:
 			print( ERROR + 'Bad Input' + RESET + '.\n' )								# Tell user bad thing
