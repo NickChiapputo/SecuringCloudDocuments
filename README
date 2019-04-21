@@ -3,6 +3,18 @@ Run in interpreter using command 'python3 main.py' or using makefile with comman
 Clean directory by removing token.pickle using command 'make clean'
 
 
+Requirements - 
+	The program is built assuming the following things are installed on the system:
+		1. Python 3.4+
+		2. Google Drive API - 
+			a. google-api-python-client 
+			b. google-auth-httplib2 
+			c. google-auth-oauthlib
+		3. Cryptography package - 
+			a. cryptography
+	The packages listed with letters (i.e., 'a.', 'b.', 'c.') can be installed using 'pip install $package'. Any additional install requirements for these packages can be found at the 'References' links.
+
+
 This program gives the user to encrypt or decrypt a file with a user given name. 
 
 Encryption - If the user chooses to encrypt, the program then asks for three passwords - one for the cipher key, one for the MAC key, and one for the nonce. These passwords are then fed into three different Password Based Key Derivation Functions (PBDKFs) to generate the key and nonce used to encrypt in AES CTR mode and to generate the key used to generate a MAC using SHA256 HMAC. The MAC is then appended to the cipher text. This final cipher text is then uploaded to the user's Drive under the same file name originally given.
