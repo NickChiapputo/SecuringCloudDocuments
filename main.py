@@ -212,7 +212,7 @@ def decrypt( service ):
 										spaces = 'drive',								# Look through drive
 										fields = 'nextPageToken, files(id, name)',		# Use pagetoken and store in 'files' with id and name tuple
 										pageToken = page_token ).execute()				# Set page token and execute search
-        ()
+        
 
 		# Drive stores files with a unique ID. User can't be expected to know complex ID.
 		# However, there may be multiple of the same file. To get around this, the first file found
