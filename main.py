@@ -29,6 +29,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']										# Set allowable acti
 
 SALT = 'saltsaltsaltsalt'																# Constant salt value to be appended to passwords
 
+
 # # #
 # Parameters:
 #	key - 32 byte (256 bit) cipher key used to encrypt and decrypt messages in AES256
@@ -49,6 +50,7 @@ def AES256encrypt( key, nonce, data ):
 	ct = encryptor.update( data ) + encryptor.finalize()								# Encrypt on data and finalize
 	return ct 																			# Return cipherText
 
+
 # # #
 # Parameters:
 #	key - 32 byte (256 bit) cipher key used to encrypt and decrypt messages in AES256
@@ -68,6 +70,7 @@ def AES256decrypt( key, nonce, ct ):
 	message = decryptor.update( ct ) + decryptor.finalize()								# Decrypt cipher text and finalize
 	return message 																		# Return decrypted message
 
+
 # # #
 # Parameters:
 #	key - The key used in SHA256
@@ -85,6 +88,7 @@ def HMAC_SHA256( key, ct ):
 	h.update( ct ) 																		# Create MAC over cipher
 	mac = h.finalize() 																	# Finalize MAC
 	return mac 																			# Return MAC
+
 
 # # #
 # Parameters:
@@ -133,6 +137,7 @@ def generatePBK( salt, length ):
 				iterations = 100000,													# Use 100 000 iterations to generate key
 				backend = default_backend() )											# Use default backend
 
+
 # # #
 # Paramaters:
 #	service: Service object that references to the user's Drive account
@@ -143,18 +148,18 @@ def generatePBK( salt, length ):
 # # #
 def encrypt( service ):
 	filename = input( 'File to encrypt: ' ) 											# Get file name from user
-	salt = ( filename + SALT ).encode()													# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
 
 
 	if os.path.exists( filename ): 														# Check if file exists. If so, read from file
-		# Get data from file 'thefile'
+		# Get data from file
 		with open( filename, 'rb' ) as f:
 			data = f.read()
 	else:																				# If file doesn't exist, stop encrypting
-		print( ERROR + 'Unable to read from file ' + RESET + filename + '.' ) 			# Tell user file doesn't exists locally
+		print( ERROR + '\nUnable to read from file ' + RESET + filename + '.' ) 		# Tell user file doesn't exists locally
 		return 																			# Return to main method
 
 
+	salt = ( filename + SALT ).encode()													# Generate unique salt by appending salt to useranme. Not incredibly secure, but more secure than a constant salt and significantly better than no salt
 	cKey  = generatePBK( salt, 32 ).derive( input( 'Cipher Key Password: ' ).encode() )	# Create cipher key derivation function then derive key using user given password
 	mKey  = generatePBK( salt, 32 ).derive( input( 'MAC Key Password   : ' ).encode() )	# Create MAC key    derivation function then derive key using user given password
 	nonce = generatePBK( salt, 16 ).derive( input( 'Nonce Password     : ' ).encode() )	# Create nonce key  derivation function then derive key using user given password
@@ -186,7 +191,7 @@ def encrypt( service ):
 
 		os.remove( 'encrypted_' + filename ) 											# Remove temporary local file storing cipher text
 
-		print( 	 'Encrypted data successfully uploaded to Drive. '						# Give user success message
+		print( 	 '\nEncrypted data successfully uploaded to Drive. '					# Give user success message
 				f'File name: {filename}' )
 	except:
 		print( ERROR + '\nUnable to upload encrypted data. ' +							# Tell user encrypted message was not able to upload
@@ -203,7 +208,7 @@ def encrypt( service ):
 # user for the cipher and nonce for AES in CTR mode and the MAC key for SHA256 HMAC verification.
 # # #
 def decrypt( service ):
-	filename = input( 'File to encrypt: ' ) 											# Get file name from user
+	filename = input( 'File to decrypt: ' ) 											# Get file name from user
 
 
 	# Search for given file name in Drive
@@ -235,7 +240,7 @@ def decrypt( service ):
 
 	# Call the Drive v3 API
 	request = service.files().get_media( fileId = file_id )								# Create request for file
-	fh = io.FileIO( filename, 'wb' )													# Open file for writing (will overwrite local file if exists)
+	fh = io.FileIO( 'encrypted_' + filename, 'wb' )										# Open file for writing (will overwrite local file if exists)
 	downloader = MediaIoBaseDownload( fh, request )										# Create downloader using request and local file
 	done = False 																		# Initially, file is not done downloading
 
@@ -244,10 +249,12 @@ def decrypt( service ):
 		status, done = downloader.next_chunk()											# Get next chunk (smaller files may only use one chunk)
 
 
-	if os.path.exists( filename ):														# Check if file exists. If so, read from file
+	if os.path.exists( 'encrypted_' + filename ):										# Check if file exists. If so, read from file
 		# Read cipher text and mac from file
-		with open( filename, 'rb' ) as f:
+		with open( 'encrypted_' + filename, 'rb' ) as f:
 			finalCT = f.read()
+
+		os.remove( 'encrypted_' + filename ) 											# Remove temporary local file storing cipher text
 	else:																				# If file doesn't exist, stop decrypting
 		print( ERROR + '\nUnable to read encrypted file' + RESET + '.' )				# Tell user program was unable to read from files
 		return 																			# Return to main method
@@ -271,7 +278,7 @@ def decrypt( service ):
 	mt = AES256decrypt( cKey, nonce, finalCT[ :ctLen ] )								# Decrypt the cipher text using AES256 in CTR mode
 
 	# Write the deciphered text to the file
-	with open( 'thefile', 'w' ) as f:
+	with open( filename, 'w' ) as f:
 		# If error occurs when writing data to disk, most likely given passwords for keys are wrong
 		try:
 			f.write( mt.decode() ) 														# Write data to file
@@ -280,7 +287,8 @@ def decrypt( service ):
 					'. Either issue with data storage, ' + 
 					'or wrong passwords were given.' )
 	
-	#print( f'\nDecrypted Text:\n{ mt.decode() }' )										# Print deciphered text					
+	#print( f'\nDecrypted Text:\n{ mt.decode() }' )										# Print deciphered text		
+	print( f'\n{filename} successfully decrypted.' )			
 		
 
 # # #
